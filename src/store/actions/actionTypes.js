@@ -1,0 +1,1 @@
+export const START_NEW_POMODORO = 'START_NEW_POMODORO';

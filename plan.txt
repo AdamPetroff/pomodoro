@@ -1,0 +1,11 @@
+components:
+- clocks
+- countdown
+- new pomodoro task entry form
+
+
+
+screens:
+- sign
+- history
+- main screen - current work / status / clocks / current pomodoro
