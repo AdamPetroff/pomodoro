@@ -1,0 +1,24 @@
+.StatusBox {
+    background-color: indianred;
+    border: 5px solid darkred;
+    padding: 3rem;
+}
+
+.StatusBox__pomodoro-count-box {
+
+}
+
+.StatusBox__pomodoro {
+    background-color: aliceblue;
+    border: 5px solid darkred;
+    padding: 1rem;
+    color: black;
+    font-size: 1.6rem;
+    display: inline-block;
+}
+
+.StatusBox__pomodoro--checked {
+    background-color: indianred;
+    border: 5px solid darkred;
+    color: white;
+}

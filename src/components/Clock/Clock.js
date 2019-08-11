@@ -1,211 +1,230 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import './Clock.css';
+import {connect} from "react-redux";
+import {finishPomodoroAction, startPomodoroAction} from "../../store/actions/actionTypes";
+import useInterval from "../../hooks/useInterval";
 
-const Clock = (props) => {
+const Clock = ({ dispatch, pomodoroTime, pomodoroRunning, nextPomodoroPending }) => {
+  const R2D = 180 / Math.PI;
 
-    const [dragging, setDragging] = useState(false);
-    const [origin, setOrigin] = useState({
-        x: null,
-        y: null
+  const [dragStartAngle, setDragStartAngle] = useState(0);
+  const [active, setActive] = useState(false);
+  const [angle, setAngle] = useState(0);
+
+  const [minuteHandData, setMinuteHandData] = useState({
+    el: null,
+    center: {
+      x: null,
+      y: null
+    },
+    rotation: 0
+  });
+
+  const [secondHandData, setSecondHandData] = useState({
+    el: null,
+    center: {
+      x: null,
+      y: null
+    },
+    rotation: 0
+  });
+
+  const [time, setTime] = useState({
+    minutes: 0,
+    seconds: 0,
+  });
+
+  const timeToMinutes = (time) => {
+    return time / 1000 / 60;
+  };
+
+  const minutesToTime = (minutes) => {
+    return minutes * 60 * 1000;
+  };
+
+  const clickHourHand = (event) => {
+    event.preventDefault();
+
+    const x = event.clientX - minuteHandData.center.x;
+    const y = event.clientY - minuteHandData.center.y;
+    setDragStartAngle(R2D * Math.atan2(y, x));
+    setActive(true);
+  };
+
+  const letUpHourHand = (event) => {
+    event.preventDefault();
+
+    if(angle + minuteHandData.rotation > 270) {
+      setAngle(minuteHandData.rotation - 360);
+    } else {
+      setAngle(minuteHandData.rotation);
+    }
+
+    setActive(false);
+
+    dispatch(startPomodoroAction(minutesToTime(time.minutes)));
+  };
+
+  const dragMinuteHand = (event) => {
+    event.preventDefault();
+    if (active) {
+      const x = event.clientX - minuteHandData.center.x;
+      const y = event.clientY - minuteHandData.center.y;
+      const d = R2D * Math.atan2(y, x);
+
+      let rot = d - dragStartAngle;
+      rot = Math.round(rot);
+
+      let rot2 = rot;
+      if ((angle + rot) < 0) {
+        rot2 += 360;
+      }
+
+      if(angle + rot > 360){}
+
+      console.log({angle, rot}, angle+rot);
+
+      const oneMinute = 360 / 60;
+      const min = Math.floor((rot + angle) / oneMinute);
+      const min2 = Math.floor((rot2 + angle) / oneMinute);
+
+      setMinuteHandData({
+        ...minuteHandData,
+        rotation: min * oneMinute,
+      });
+
+      setTime({
+        minutes: min2,
+        seconds: 0,
+      });
+    }
+  };
+
+  useEffect(() => {
+    const minuteHandElement = document.getElementById('minute-hand');
+    const secondHandElement = document.getElementById('second-hand');
+    const minuteHandBoundingBox = minuteHandElement.getBoundingClientRect();
+    const secondHandBoundingBox = minuteHandElement.getBoundingClientRect();
+
+    setMinuteHandData({
+      center: {
+        x: minuteHandBoundingBox.left + (minuteHandBoundingBox.width / 2),
+        y: minuteHandBoundingBox.top + (minuteHandBoundingBox.height / 2),
+      },
+      el: minuteHandElement,
+      rotation: 0,
     });
 
-    const [handle, setHandle] = useState({
-        x: null,
-        y: null
+    setSecondHandData({
+      center: {
+        x: secondHandBoundingBox.left + (secondHandBoundingBox.width / 2),
+        y: secondHandBoundingBox.top + (secondHandBoundingBox.height / 2)
+      },
+      el: secondHandElement,
+      rotation: 0,
     });
 
-    const [lastAngle, setLastAngle] = useState(0);
-    const [draggableEl, setDraggableEl] = useState(null);
+  }, []);
 
+  useInterval(() => {
+    if(pomodoroRunning && !active) {
 
-    const clickHourHand = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      let newSeconds = time.seconds - 1;
+      if (time.seconds === 0) {
+        if (time.minutes === 0) {
+          dispatch(finishPomodoroAction());
 
-        setHandle({
-            x: event.pageX,
-            y: event.pageY
+          setTime({
+            seconds: 0,
+            minutes: 0,
+          });
+
+          return;
+        }
+
+        setTime({
+          seconds: 59,
+          minutes: time.minutes - 1,
         });
 
-        setDragging(true);
+        return;
+      }
 
-        console.log(dragging, 'click');
+      setTime({
+        seconds: newSeconds,
+        minutes: time.minutes,
+      });
+    }
+  }, pomodoroRunning ? 100 : null);
 
-        setOrigin({
-            x: draggableEl.offsetLeft,
-            y: draggableEl.offsetTop
-        });
-    };
+  useEffect(() => {
+    if (minuteHandData.el && !active) {
+      setMinuteHandData({
+        ...minuteHandData,
+        rotation: (time.minutes / 60) * 360
+      });
 
-    const letUpHourHand = (event) => {
-        if(dragging) {
-            setDragging(false);
+      setSecondHandData({
+        ...secondHandData,
+        rotation: (time.seconds / 60) * 360
+      })
+    }
 
-            const startRotationPointX = event.pageX;
-            const startRotationPointY = event.pageY;
 
-            let startRad = Math.atan2(startRotationPointY - origin.y, startRotationPointX - origin.x); // current to origin
-            startRad -= Math.atan2(handle.y - origin.y, handle.x - origin.x); // handle to origin
+  }, [time, active]);
 
-            setLastAngle(lastAngle + startRad);
-        }
-    };
+  useEffect(() => {
+    if(!nextPomodoroPending) {
+      setTime({
+        minutes: timeToMinutes(pomodoroTime),
+        seconds: 0,
+      });
+    }
+  }, [pomodoroTime, nextPomodoroPending]);
 
-    const dragHourHand = (event) => {
-        console.log(dragging);
-        if(dragging) {
+  const formatTime = (time) => {
+    let output = time.minutes < 10 ? "0" + time.minutes : time.minutes;
+    output += ":";
+    output += time.seconds < 10 ? "0" + time.seconds : time.seconds;
 
-            const startRotationPointX = event.pageX;
-            const startRotationPointY = event.pageY;
+    return output;
+  };
 
-            if (startRotationPointX !== origin.x && startRotationPointY !== origin.y) {
-                let startRad = Math.atan2(startRotationPointY - origin.y, startRotationPointX - origin.x); // current to origin
-                startRad -= Math.atan2(handle.y - origin.y, handle.x - origin.x); // handle to origin
-                startRad += lastAngle; // relative to the last one
-                const degree = (startRad * (360 / (2 * Math.PI)));
+  // console.log({angle, startAngle, minuteHandData})
 
-                draggableEl.style.transform = 'translateX(-50%) rotate(' + degree + 'deg)';
-            }
-        }
-    };
-
-    useEffect(() => {
-        setDraggableEl(document.getElementById('hour-hand'));
-    }, []);
-
-    return (
-        <div onMouseUp={letUpHourHand} onMouseMove={dragHourHand} className="clock">
-            <div className="clock__dial">
-                <span className="clock__dial-number clock__dial-number--0">0</span>
-                <span className="clock__dial-number clock__dial-number--15">15</span>
-                <span className="clock__dial-number clock__dial-number--30">30</span>
-                <span className="clock__dial-number clock__dial-number--45">45</span>
-            </div>
-
-            <div id="hour-hand" className="clock__hour-hand">
-                <div onMouseDown={clickHourHand} className="clock__hour-hand-handle"/>
-            </div>
-            <div className="clock__background"/>
+  return (
+    <div onMouseUp={letUpHourHand} onMouseMove={dragMinuteHand} className="clock">
+      <div className="clock__dial">
+        <div className="clock__center">
+          <div className="clock__display">
+            <span>{formatTime(time)}</span>
+          </div>
         </div>
-    );
+
+        <span className="clock__dial-number clock__dial-number--0">0</span>
+        <span className="clock__dial-number clock__dial-number--15">15</span>
+        <span className="clock__dial-number clock__dial-number--30">30</span>
+        <span className="clock__dial-number clock__dial-number--45">45</span>
+
+        <div style={{transform: "translateX(-50%) rotate(" + minuteHandData.rotation + "deg)"}} onMouseDown={clickHourHand}
+             id="minute-hand" className="clock__minute-hand">
+          <div className="clock__minute-hand-tip"/>
+        </div>
+
+        <div style={{transform: "translateX(-50%) rotate(" + secondHandData.rotation + "deg)"}}
+             id="second-hand"
+             className="clock__second-hand"/>
+      </div>
+    </div>
+  );
 };
 
-// $(function () {
-//     var dragging = false,
-//         target_wp,
-//         o_x, o_y, h_x, h_y, last_angle;
-//     $('.handle').mousedown(function (e) {
-//         h_x = e.pageX;
-//         h_y = e.pageY; // clicked point
-//         e.preventDefault();
-//         e.stopPropagation();
-//         dragging = true;
-//         target_wp = $(e.target).closest('.draggable_wp');
-//         if (!target_wp.data("origin")) target_wp.data("origin", {
-//             left: target_wp.offset().left,
-//             top: target_wp.offset().top
-//         });
-//         o_x = target_wp.data("origin").left;
-//         o_y = target_wp.data("origin").top; // origin point
-//
-//         last_angle = target_wp.data("last_angle") || 0;
-//     })
-//
-//     $(document).mousemove(function (e) {
-//         if (dragging) {
-//             var s_x = e.pageX,
-//                 s_y = e.pageY; // start rotate point
-//             if (s_x !== o_x && s_y !== o_y) { //start rotate
-//                 var s_rad = Math.atan2(s_y - o_y, s_x - o_x); // current to origin
-//                 s_rad -= Math.atan2(h_y - o_y, h_x - o_x); // handle to origin
-//                 s_rad += last_angle; // relative to the last one
-//                 var degree = (s_rad * (360 / (2 * Math.PI)));
-//                 target_wp.css('-moz-transform', 'rotate(' + degree + 'deg)');
-//                 target_wp.css('-moz-transform-origin', '50% 50%');
-//                 target_wp.css('-webkit-transform', 'rotate(' + degree + 'deg)');
-//                 target_wp.css('-webkit-transform-origin', '50% 50%');
-//                 target_wp.css('-o-transform', 'rotate(' + degree + 'deg)');
-//                 target_wp.css('-o-transform-origin', '50% 50%');
-//                 target_wp.css('-ms-transform', 'rotate(' + degree + 'deg)');
-//                 target_wp.css('-ms-transform-origin', '50% 50%');
-//             }
-//         }
-//     }) // end mousemove
-//
-//     $(document).mouseup(function (e) {
-//         dragging = false
-//         var s_x = e.pageX,
-//             s_y = e.pageY;
-//
-//         // Saves the last angle for future iterations
-//         var s_rad = Math.atan2(s_y - o_y, s_x - o_x); // current to origin
-//         s_rad -= Math.atan2(h_y - o_y, h_x - o_x); // handle to origin
-//         s_rad += last_angle;
-//         target_wp.data("last_angle", s_rad);
-//     })
-// })
+const mapStateToProps = (state) => {
+  return {
+    pomodoroTime: state.time,
+    pomodoroRunning: state.pomodoroRunning,
+    nextPomodoroPending: state.nextPomodoroPending,
+  };
+};
 
-(function() {
-    var init, rotate, start, stop,
-        active = false,
-        angle = 0,
-        rotation = 0,
-        startAngle = 0,
-        center = {
-            x: 0,
-            y: 0
-        },
-        R2D = 180 / Math.PI,
-        rot = document.getElementById('rotate');
-
-    init = function() {
-        rot.addEventListener("mousedown", start, false);
-        $(document).bind('mousemove', function(event) {
-            if (active === true) {
-                event.preventDefault();
-                rotate(event);
-            }
-        });
-        $(document).bind('mouseup', function(event) {
-            event.preventDefault();
-            stop(event);
-        });
-    };
-
-    start = function(e) {
-        e.preventDefault();
-        var bb = this.getBoundingClientRect(),
-            t = bb.top,
-            l = bb.left,
-            h = bb.height,
-            w = bb.width,
-            x, y;
-        center = {
-            x: l + (w / 2),
-            y: t + (h / 2)
-        };
-        x = e.clientX - center.x;
-        y = e.clientY - center.y;
-        startAngle = R2D * Math.atan2(y, x);
-        return active = true;
-    };
-
-    rotate = function(e) {
-        e.preventDefault();
-        var x = e.clientX - center.x,
-            y = e.clientY - center.y,
-            d = R2D * Math.atan2(y, x);
-        rotation = d - startAngle;
-        return rot.style.webkitTransform = "rotate(" + (angle + rotation) + "deg)";
-    };
-
-    stop = function() {
-        angle += rotation;
-        return active = false;
-    };
-
-    init();
-
-}).call(this);
-
-export default Clock;
+export default connect(mapStateToProps)(Clock);

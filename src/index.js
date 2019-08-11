@@ -8,6 +8,7 @@ import createSagaMiddleware from 'redux-saga';
 import {Provider} from 'react-redux';
 
 import reducer from './store/reducers/reducer';
+import {BrowserRouter} from "react-router-dom";
 
 const rootReducer = reducer;
 
@@ -17,7 +18,9 @@ const store = createStore(rootReducer, composeEnhancers(applyMiddleware(sagaMidd
 
 ReactDOM.render(
     <Provider store={store}>
-        <App />
+        <BrowserRouter>
+            <App />
+        </BrowserRouter>
     </Provider>,
     document.getElementById('root'));
 

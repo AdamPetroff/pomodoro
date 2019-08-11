@@ -1,15 +1,16 @@
 import React from 'react';
 import './App.css';
-import Countdown from "./components/Countdown/Countdown";
-import NewPomodoroForm from "./components/NewPomodoroForm/NewPomodoroForm";
-import Clock from "./components/Clock/Clock";
+import NavBar from "./components/NavBar/NavBar";
+import {Route, Switch} from "react-router";
+import Pomodoro from "./pages/Pomodoro";
 
 function App() {
     return (
         <div className="App">
-            <NewPomodoroForm/>
-            <Countdown/>
-            <Clock/>
+            <NavBar/>
+            <Switch>
+                <Route path="/" component={Pomodoro} />
+            </Switch>
         </div>
     );
 }

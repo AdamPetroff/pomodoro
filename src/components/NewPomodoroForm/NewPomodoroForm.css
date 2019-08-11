@@ -1,0 +1,12 @@
+.NewPomodoroForm {
+    background-color: indianred;
+    border: 5px solid darkred;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem;
+}
+
+.NewPomodoroForm > * {
+    margin: 1rem;
+}

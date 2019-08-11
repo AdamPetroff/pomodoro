@@ -9,3 +9,16 @@ screens:
 - sign
 - history
 - main screen - current work / status / clocks / current pomodoro
+
+start pomodoro form:
+- one pomodoro time
+- name of the task
+
+status:
+- current pomodoro
+- estimated end time
+- pause button
+
+
+
+1. just test pause button

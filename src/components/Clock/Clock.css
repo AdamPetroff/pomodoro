@@ -1,21 +1,26 @@
 .clock {
-    width: 20rem;
-    height: 20rem;
+    width: 25rem;
+    height: 25rem;
     position: relative;
     display: inline-block;
     padding: 10rem;
+    box-sizing: content-box;
 }
 
 .clock__dial {
-    background-color: lightgrey;
+    background-color: oldlace;
     border-radius: 50%;
     width: 100%;
     height: 100%;
     position: relative;
+    border: 10px solid black;
+    box-sizing: border-box;
 }
 
 .clock__dial-number {
     position: absolute;
+    padding: 1rem;
+    font-size: 1.6rem;
 }
 
 .clock__dial-number--0 {
@@ -45,23 +50,39 @@
 
 }
 
-.clock__hour-hand {
+.clock__minute-hand {
     position: absolute;
     width: 1.5rem;
-    height: 50%;
-    background-color: black;
-    top: 50%;
+    height: 100%;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
-    transform-origin: 50% 0;
+    background-image: linear-gradient(0, transparent 50%, black 50%);
+    border-radius: 50%;
+    z-index: 4;
 }
 
-.clock__hour-hand-handle {
+.clock__minute-hand-tip {
     position: absolute;
-    bottom: 0;
+    top: 5px;
     background-color: orange;
-    width: 100%;
+    width: 20%;
     height: 20px;
+    left: 40%;
+    border-radius: 5px;
+}
+
+.clock__second-hand {
+    position: absolute;
+    width: 1rem;
+    height: 50%;
+    bottom: 50%;
+    left: 50%;
+    transform-origin: bottom;
+    transform: translateX(-50%);
+    background-image: linear-gradient(0, transparent 92%, black 8%);
+    border-radius: 40%;
+    z-index: 3;
 }
 
 .clock__background {
@@ -71,4 +92,26 @@
     width: 100vw;
     height: 100vh;
     z-index: -100;
+}
+
+.clock__center {
+    width: 30%;
+    height: 30%;
+    background-color: black;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    text-align: center;
+    z-index: 5;
+}
+
+.clock__display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.6rem;
 }

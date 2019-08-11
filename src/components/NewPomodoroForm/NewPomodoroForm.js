@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {connect} from "react-redux";
 import * as actionTypes from './../../store/actions/actionTypes';
+import './NewPomodoroForm.css'
 
 const NewPomodoroForm = (props) => {
 
@@ -9,12 +10,12 @@ const NewPomodoroForm = (props) => {
     const formSubmitted = (event) => {
         event.preventDefault();
 
-        console.log(time);
-
         const minutes = time.substr(0,2);
         const seconds = time.substr(3,2);
 
-        props.onFormSubmitted(minutes * 60 * 1000 + seconds * 1000);
+        const pomodoroName = document.getElementById("pomodoro-name-input").value;
+
+        props.onFormSubmitted(minutes * 60 * 1000 + seconds * 1000, pomodoroName);
     };
 
     const inputChanged = (event) => {
@@ -22,20 +23,20 @@ const NewPomodoroForm = (props) => {
     };
 
     return (
-        <div className="NewPomodoroForm">
-            <form>
-                <input onChange={inputChanged} type="time" />
-                <button onClick={formSubmitted}>Start</button>
-            </form>
-        </div>
+        <form className="NewPomodoroForm" onSubmit={formSubmitted}>
+            <input onChange={inputChanged} type="time" />
+            <input type="text" id="pomodoro-name-input" />
+            <button>Start</button>
+        </form>
     );
 };
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        onFormSubmitted: (time) => dispatch({
-            type: actionTypes.START_NEW_POMODORO,
-            time: time
+        onFormSubmitted: (time, name) => dispatch({
+            type: actionTypes.START_NEW_SET,
+            time: time,
+            name: name
         })
     }
 };
